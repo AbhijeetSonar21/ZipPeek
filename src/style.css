@@ -45,15 +45,15 @@ h1 {
     margin: 0;
 }
 
-.file-select-area {
+.file-select-area, .zip-contents {
     background-color: var(--background-color);
     border-radius: var(--border-radius);
     padding: 40px;
-    text-align: center;
+    margin-bottom: 20px;
     box-shadow: var(--box-shadow);
 }
 
-h2 {
+h2, h3 {
     color: var(--primary-color);
     margin-top: 0;
 }
@@ -89,6 +89,24 @@ h2 {
     color: var(--accent-color);
 }
 
+.file-tree {
+    list-style-type: none;
+    padding-left: 20px;
+}
+
+.file-tree li {
+    margin-bottom: 5px;
+}
+
+.file-tree li::before {
+    content: '📄';
+    margin-right: 5px;
+}
+
+.file-tree li.folder::before {
+    content: '📁';
+}
+
 footer {
     text-align: center;
     margin-top: 40px;
@@ -100,7 +118,7 @@ footer {
     to { opacity: 1; }
 }
 
-.file-select-area {
+.file-select-area, .zip-contents {
     animation: fadeIn 0.5s ease-out;
 }
 
@@ -113,7 +131,7 @@ footer {
         font-size: 2rem;
     }
 
-    .file-select-area {
+    .file-select-area, .zip-contents {
         padding: 30px 20px;
     }
 }

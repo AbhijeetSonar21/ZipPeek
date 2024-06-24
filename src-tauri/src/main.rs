@@ -1,6 +1,9 @@
 // Import necessary modules from Tauri
 use tauri::Manager;
 use tauri::api::dialog::FileDialogBuilder;
+use zip::read::ZipArchive;
+use std::fs::File;
+use std::io::BufReader;
 
 /// Function to handle ZIP file selection
 /// This function is called from the frontend to open a file dialog
@@ -31,6 +34,26 @@ async fn select_zip_file(window: tauri::Window) -> Result<(), String> {
     Ok(())
 }
 
+// Function to parse the ZIP file and return its contents
+#[tauri::command]
+fn parse_zip_file(file_path: String) -> Result<Vec<String>, String> {
+    // Open the ZIP file
+    let file = File::open(&file_path).map_err(|e| format!("Failed to open ZIP file: {}", e))?;
+    let reader = BufReader::new(file);
+
+    // Create a ZipArchive from the file
+    let mut zip = ZipArchive::new(reader).map_err(|e| format!("Error reading ZIP archive: {}", e))?;
+
+    // Extract file paths from the ZIP archive
+    let mut file_paths = Vec::new();
+    for i in 0..zip.len() {
+        let file = zip.by_index(i).map_err(|e| format!("Error reading file in ZIP archive: {}", e))?;
+        file_paths.push(file.name().to_string());
+    }
+
+    Ok(file_paths)
+}
+
 fn main() {
     // Create and configure the Tauri application
     tauri::Builder::default()
@@ -41,7 +64,7 @@ fn main() {
             Ok(())
         })
         // Register the select_zip_file function to be callable from JavaScript
-        .invoke_handler(tauri::generate_handler![select_zip_file])
+        .invoke_handler(tauri::generate_handler![select_zip_file, parse_zip_file])
         // Run the Tauri application
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
