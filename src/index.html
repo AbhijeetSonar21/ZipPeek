@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tauri Hello World</title>
+</head>
+<body>
+    <h1>Welcome to Tauri!</h1>
+    <input id="name-input" placeholder="Enter your name">
+    <button id="greet-button">Greet</button>
+    <p id="greeting-msg"></p>
+
+    <script>
+        // We use this to ensure Tauri API is loaded before we try to use it
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get references to our HTML elements
+            const nameInput = document.getElementById('name-input');
+            const greetButton = document.getElementById('greet-button');
+            const greetingMsg = document.getElementById('greeting-msg');
+
+            // Add click event listener to the button
+            greetButton.addEventListener('click', () => {
+                // Get the name from the input
+                const name = nameInput.value;
+
+                // Call the `greet` function we defined in Rust
+                window.__TAURI__.invoke('greet', { name: name })
+                    .then((response) => {
+                        // Update the greeting message with the response from Rust
+                        greetingMsg.textContent = response;
+                    })
+                    .catch((error) => {
+                        console.error('Error:', error);
+                        greetingMsg.textContent = 'An error occurred while greeting.';
+                    });
+            });
+        });
+    </script>
+</body>
+</html>
