@@ -3,39 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tauri Hello World</title>
+    <title>ZIP Explorer Pro</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <h1>Welcome to Tauri!</h1>
-    <input id="name-input" placeholder="Enter your name">
-    <button id="greet-button">Greet</button>
-    <p id="greeting-msg"></p>
-
-    <script>
-        // We use this to ensure Tauri API is loaded before we try to use it
-        document.addEventListener('DOMContentLoaded', () => {
-            // Get references to our HTML elements
-            const nameInput = document.getElementById('name-input');
-            const greetButton = document.getElementById('greet-button');
-            const greetingMsg = document.getElementById('greeting-msg');
-
-            // Add click event listener to the button
-            greetButton.addEventListener('click', () => {
-                // Get the name from the input
-                const name = nameInput.value;
-
-                // Call the `greet` function we defined in Rust
-                window.__TAURI__.invoke('greet', { name: name })
-                    .then((response) => {
-                        // Update the greeting message with the response from Rust
-                        greetingMsg.textContent = response;
-                    })
-                    .catch((error) => {
-                        console.error('Error:', error);
-                        greetingMsg.textContent = 'An error occurred while greeting.';
-                    });
-            });
-        });
-    </script>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6H12L10 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V8C22 6.9 21.1 6 20 6ZM20 18H4V6H9.17L11.17 8H20V18ZM16 12H14V10H12V12H10V14H12V16H14V14H16V12Z" fill="#4CAF50"/>
+                </svg>
+                <h1>ZIP Explorer Pro</h1>
+            </div>
+        </header>
+        <main>
+            <div class="file-select-area">
+                <h2>Select Your ZIP File</h2>
+                <p>Choose a ZIP file to explore its contents</p>
+                <button id="selectFileBtn" class="btn-primary">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z" fill="white"/>
+                    </svg>
+                    Select ZIP File
+                </button>
+                <p id="selectedFileName" class="file-name"></p>
+            </div>
+        </main>
+        <footer>
+            <p>&copy; 2024 ZIP Explorer Pro. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
 </body>
 </html>
