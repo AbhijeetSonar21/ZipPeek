@@ -1,29 +1,71 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const selectFileBtn = document.getElementById('selectFileBtn');
-    const selectedFileName = document.getElementById('selectedFileName');
-    const zipContents = document.getElementById('zipContents');
-    const fileTree = document.getElementById('fileTree');
-    const passwordPrompt = document.getElementById('passwordPrompt');
-    const zipPassword = document.getElementById('zipPassword');
-    const submitPassword = document.getElementById('submitPassword');
-    const zipMetadata = document.getElementById('zipMetadata');
+document.addEventListener('DOMContentLoaded', async () => {
+    const elements = {
+        selectFileBtn: document.getElementById('selectFileBtn'),
+        selectedFileName: document.getElementById('selectedFileName'),
+        zipContents: document.getElementById('zipContents'),
+        fileTree: document.getElementById('fileTree'),
+        passwordModal: document.getElementById('passwordModal'),
+        zipPassword: document.getElementById('zipPassword'),
+        submitPassword: document.getElementById('submitPassword'),
+        cancelPassword: document.getElementById('cancelPassword'),
+        zipMetadata: document.getElementById('zipMetadata'),
+        recentZipsList: document.getElementById('recentZipsList'),
+        platformInfo: document.getElementById('platformInfo'),
+        passwordErrorMsg: document.getElementById('passwordErrorMsg')
+    };
 
     let currentFilePath = null;
 
-    selectFileBtn.addEventListener('click', async () => {
-        try {
-            await window.__TAURI__.invoke('select_zip_file');
-        } catch (error) {
-            console.error('Error selecting file:', error);
-            selectedFileName.textContent = 'Error selecting file. Please try again.';
-        }
-    });
+    function animateElement(element) {
+        element.classList.remove('fade-in');
+        void element.offsetWidth;
+        element.classList.add('fade-in');
+    }
 
-    window.__TAURI__.event.listen('file-selected', async (event) => {
-        currentFilePath = event.payload;
-        selectedFileName.textContent = `Selected file: ${currentFilePath}`;
-        await parseZipFile(currentFilePath);
-    });
+    async function getPlatformInfo() {
+        try {
+            const platformInfo = await window.__TAURI__.invoke('get_platform_info');
+            elements.platformInfo.textContent = `ZipPeek is running on ${platformInfo}`;
+        } catch (error) {
+            console.error('Error getting platform information:', error);
+            elements.platformInfo.textContent = 'Error retrieving platform information';
+        }
+    }
+
+    function loadRecentZips() {
+        const recentZips = JSON.parse(localStorage.getItem('recentZips')) || [];
+        elements.recentZipsList.innerHTML = '';
+        recentZips.forEach(zip => {
+            const li = document.createElement('li');
+            li.textContent = zip.name;
+            li.addEventListener('click', () => handleFileSelection(zip.path));
+            elements.recentZipsList.appendChild(li);
+        });
+    }
+
+    function addToRecentZips(filePath) {
+        const fileName = filePath.split('\\').pop().split('/').pop();
+        const recentZips = JSON.parse(localStorage.getItem('recentZips')) || [];
+        const newZip = { path: filePath, name: fileName };
+        const updatedZips = [newZip, ...recentZips.filter(zip => zip.path !== filePath)].slice(0, 5);
+        localStorage.setItem('recentZips', JSON.stringify(updatedZips));
+        loadRecentZips();
+    }
+
+    async function handleFileSelection(filePath) {
+        currentFilePath = filePath;
+        const fileName = filePath.split('\\').pop().split('/').pop();
+        elements.selectedFileName.textContent = `Selected file: ${fileName}`;
+        animateElement(elements.selectedFileName);
+        addToRecentZips(filePath);
+
+        elements.zipContents.classList.add('hidden');
+        elements.zipMetadata.classList.add('hidden');
+        elements.passwordModal.classList.add('hidden');
+        elements.passwordErrorMsg.classList.add('hidden');
+
+        await parseZipFile(filePath);
+    }
 
     async function parseZipFile(filePath, password = null) {
         try {
@@ -32,58 +74,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 showPasswordPrompt();
             } else {
                 hidePasswordPrompt();
+                if (!contents.is_encrypted) {
+                    elements.selectedFileName.textContent = `Selected file: ${filePath.split('\\').pop().split('/').pop()}`;
+                }
                 displayZipContents(contents.files);
                 displayZipMetadata(contents.metadata);
             }
         } catch (error) {
-            console.error('Error parsing ZIP file:', error);
-            selectedFileName.textContent = 'Error parsing ZIP file. Please try again.';
-            hidePasswordPrompt();
+            if (error.includes('Invalid password')) {
+                showPasswordError('Wrong password, please try again.');
+            } else {
+                console.error('Error parsing ZIP file:', error);
+                elements.selectedFileName.textContent = 'Error parsing ZIP file. Please try again.';
+            }
         }
     }
 
     function showPasswordPrompt() {
-        passwordPrompt.style.display = 'block';
-        zipPassword.value = ''; 
-        zipPassword.focus();
+        elements.passwordModal.classList.remove('hidden');
+        elements.zipPassword.value = '';
+        elements.zipPassword.focus();
     }
 
     function hidePasswordPrompt() {
-        passwordPrompt.style.display = 'none';
+        elements.passwordModal.classList.add('hidden');
     }
 
-    submitPassword.addEventListener('click', () => {
-        const password = zipPassword.value;
-        if (password && currentFilePath) {
-            parseZipFile(currentFilePath, password);
-        } else {
-            selectedFileName.textContent = 'Password input cancelled. Please try again.';
-        }
-    });
-
-    // Allow submitting password with Enter key
-    zipPassword.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') {
-            submitPassword.click();
-        }
-    });
+    function showPasswordError(message) {
+        elements.passwordErrorMsg.textContent = message;
+        elements.passwordErrorMsg.classList.remove('hidden');
+    }
 
     function displayZipContents(files) {
-        fileTree.innerHTML = '';
+        elements.fileTree.innerHTML = '';
         const tree = createTreeStructure(files);
-        renderTree(tree, fileTree);
-        zipContents.style.display = 'block';
+        renderTree(tree, elements.fileTree);
+        elements.zipContents.classList.remove('hidden');
+        animateElement(elements.zipContents);
     }
 
     function displayZipMetadata(metadata) {
-        zipMetadata.innerHTML = `
+        elements.zipMetadata.innerHTML = `
             <h3>ZIP File Metadata</h3>
-            <p>Name: ${metadata.name}</p>
-            <p>Size: ${formatBytes(metadata.size)}</p>
-            <p>Compressed Size: ${formatBytes(metadata.compressed_size)}</p>
-            <p>Number of Files: ${metadata.number_of_files}</p>
+            <p><strong>Name:</strong> ${metadata.name}</p>
+            <p><strong>Size:</strong> ${formatBytes(metadata.size)}</p>
+            <p><strong>Compressed Size:</strong> ${formatBytes(metadata.compressed_size)}</p>
+            <p><strong>Number of Files:</strong> ${metadata.number_of_files}</p>
         `;
-        zipMetadata.style.display = 'block';
+        elements.zipMetadata.classList.remove('hidden');
+        animateElement(elements.zipMetadata);
     }
 
     function formatBytes(bytes, decimals = 2) {
@@ -123,4 +162,33 @@ document.addEventListener('DOMContentLoaded', () => {
             parentElement.appendChild(li);
         }
     }
+
+    elements.selectFileBtn.addEventListener('click', async () => {
+        try {
+            await window.__TAURI__.invoke('select_zip_file');
+        } catch (error) {
+            console.error('Error selecting file:', error);
+            elements.selectedFileName.textContent = 'Error selecting file. Please try again.';
+        }
+    });
+
+    window.__TAURI__.event.listen('file-selected', async (event) => {
+        await handleFileSelection(event.payload);
+    });
+
+    elements.submitPassword.addEventListener('click', () => {
+        const password = elements.zipPassword.value;
+        if (password && currentFilePath) {
+            hidePasswordPrompt();
+            parseZipFile(currentFilePath, password);
+        } else {
+            elements.zipPassword.classList.add('error');
+            setTimeout(() => elements.zipPassword.classList.remove('error'), 500);
+        }
+    });
+
+    elements.cancelPassword.addEventListener('click', hidePasswordPrompt);
+
+    loadRecentZips();
+    await getPlatformInfo();
 });

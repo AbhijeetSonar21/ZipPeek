@@ -1,5 +1,4 @@
 // Import necessary modules from Tauri
-use tauri::Manager;
 use tauri::api::dialog::FileDialogBuilder;
 use zip::read::ZipArchive;
 use std::fs::File;
@@ -37,11 +36,15 @@ async fn select_zip_file(window: tauri::Window) -> Result<(), String> {
                     // If a file was selected, convert the path to a string
                     let file_path_str = path.display().to_string();
                     // Emit a custom event to the frontend with the selected file path
-                    window.emit("file-selected", file_path_str).unwrap();
+                    window.emit("file-selected", file_path_str).unwrap_or_else(|e| {
+                        eprintln!("Failed to emit file-selected event: {}", e);
+                    });
                 },
                 None => {
                     // If no file was selected (user cancelled), emit a cancellation event
-                    window.emit("file-selection-cancelled", ()).unwrap();
+                    window.emit("file-selection-cancelled", ()).unwrap_or_else(|e| {
+                        eprintln!("Failed to emit file-selection-cancelled event: {}", e);
+                    });
                 }
             }
         });
@@ -82,15 +85,21 @@ fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipCont
             }
             Err(e) => {
                 // Log the error but continue processing
-                println!("Error reading file at index {}: {}", i, e);
+                eprintln!("Error reading file at index {}: {}", i, e);
                 continue;
             }
         }
     }
 
     let path = Path::new(&file_path);
+    let file_name = path.file_name()
+        .ok_or_else(|| "Invalid file path".to_string())?
+        .to_str()
+        .ok_or_else(|| "Invalid file name encoding".to_string())?
+        .to_string();
+
     let metadata = ZipMetadata {
-        name: path.file_name().unwrap().to_str().unwrap().to_string(),
+        name: file_name,
         size: total_uncompressed_size,
         compressed_size: total_compressed_size,
         number_of_files: file_paths.len(),
@@ -103,17 +112,24 @@ fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipCont
     })
 }
 
+// Function to get the platform information
+#[tauri::command]
+fn get_platform_info() -> Result<String, String> {
+    let platform = std::env::consts::OS;
+    Ok(platform.to_string())
+}
+
 fn main() {
     // Create and configure the Tauri application
     tauri::Builder::default()
         // Set up any initialization logic
-        .setup(|app| {
+        .setup(|_app| {
             // Print a startup message to the console
             println!("ZIP Explorer Pro is starting up!");
             Ok(())
         })
-        // Register the select_zip_file function to be callable from JavaScript
-        .invoke_handler(tauri::generate_handler![select_zip_file, parse_zip_file])
+        // Register the select_zip_file, parse_zip_file, and get_platform_info functions to be callable from JavaScript
+        .invoke_handler(tauri::generate_handler![select_zip_file, parse_zip_file, get_platform_info])
         // Run the Tauri application
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
