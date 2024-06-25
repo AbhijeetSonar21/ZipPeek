@@ -18,7 +18,7 @@
             </div>
         </header>
         <main>
-            <div class="file-select-area">
+            <section class="file-select-area">
                 <h2>Select Your ZIP File</h2>
                 <p>Choose a ZIP file to explore its contents</p>
                 <button id="selectFileBtn" class="btn-primary">
@@ -28,12 +28,16 @@
                     Select ZIP File
                 </button>
                 <p id="selectedFileName" class="file-name"></p>
-            </div>
-            <!-- New section for displaying ZIP contents -->
-            <div id="zipContents" class="zip-contents" style="display: none;">
+            </section>
+            <section id="passwordPrompt" class="password-prompt" style="display: none;">
+                <p>This ZIP file is password-protected. Please enter the password.</p>
+                <input type="password" id="zipPassword" placeholder="Enter password">
+                <button id="submitPassword" class="btn-secondary">Submit</button>
+            </section>
+            <section id="zipContents" class="zip-contents" style="display: none;">
                 <h3>ZIP Contents</h3>
                 <ul id="fileTree" class="file-tree"></ul>
-            </div>
+            </section>
         </main>
         <footer>
             <p>&copy; 2024 ZIP Explorer Pro. All rights reserved.</p>

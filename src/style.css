@@ -1,32 +1,38 @@
 :root {
     --primary-color: #4CAF50;
-    --secondary-color: #F5F5F5;
-    --text-color: #333333;
-    --background-color: #FFFFFF;
-    --accent-color: #2196F3;
+    --secondary-color: #2196F3;
+    --background-color: #F5F5F5;
+    --surface-color: #FFFFFF;
+    --on-surface-color: #333333;
+    --on-primary-color: #FFFFFF;
     --error-color: #F44336;
     --border-radius: 8px;
-    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     --transition: all 0.3s ease;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
     font-family: 'Roboto', sans-serif;
     line-height: 1.6;
-    color: var(--text-color);
-    background-color: var(--secondary-color);
-    margin: 0;
-    padding: 0;
+    color: var(--on-surface-color);
+    background-color: var(--background-color);
 }
 
 .container {
     max-width: 800px;
     margin: 0 auto;
-    padding: 40px 20px;
+    padding: 2rem;
 }
 
 header {
-    margin-bottom: 40px;
+    margin-bottom: 2rem;
+    text-align: center;
 }
 
 .logo {
@@ -36,71 +42,92 @@ header {
 }
 
 .logo svg {
-    margin-right: 10px;
+    margin-right: 1rem;
 }
 
 h1 {
     color: var(--primary-color);
     font-size: 2.5rem;
-    margin: 0;
 }
 
-.file-select-area, .zip-contents {
-    background-color: var(--background-color);
+main section {
+    background-color: var(--surface-color);
     border-radius: var(--border-radius);
-    padding: 40px;
-    margin-bottom: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
     box-shadow: var(--box-shadow);
 }
 
 h2, h3 {
     color: var(--primary-color);
-    margin-top: 0;
+    margin-bottom: 1rem;
 }
 
-.btn-primary {
-    background-color: var(--primary-color);
-    color: white;
+.btn-primary, .btn-secondary {
     border: none;
-    padding: 12px 24px;
-    font-size: 16px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     border-radius: var(--border-radius);
     cursor: pointer;
     transition: var(--transition);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-top: 20px;
 }
 
-.btn-primary:hover {
-    background-color: #45a049;
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--on-primary-color);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: var(--on-primary-color);
+}
+
+.btn-primary:hover, .btn-secondary:hover {
+    filter: brightness(1.1);
     transform: translateY(-2px);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.btn-primary svg {
-    margin-right: 8px;
+.btn-primary svg, .btn-secondary svg {
+    margin-right: 0.5rem;
 }
 
 .file-name {
-    margin-top: 20px;
+    margin-top: 1rem;
     font-weight: bold;
-    color: var(--accent-color);
+    color: var(--secondary-color);
+}
+
+.password-prompt {
+    background-color: var(--secondary-color);
+    color: var(--on-primary-color);
+}
+
+.password-prompt input {
+    width: 100%;
+    padding: 0.5rem;
+    margin: 1rem 0;
+    border: 1px solid var(--on-primary-color);
+    border-radius: var(--border-radius);
 }
 
 .file-tree {
     list-style-type: none;
-    padding-left: 20px;
+    padding-left: 1.5rem;
 }
 
 .file-tree li {
-    margin-bottom: 5px;
+    margin-bottom: 0.5rem;
+    position: relative;
 }
 
 .file-tree li::before {
     content: '📄';
-    margin-right: 5px;
+    position: absolute;
+    left: -1.5rem;
 }
 
 .file-tree li.folder::before {
@@ -109,29 +136,30 @@ h2, h3 {
 
 footer {
     text-align: center;
-    margin-top: 40px;
-    color: #777;
+    margin-top: 2rem;
+    color: var(--on-surface-color);
+    opacity: 0.7;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.file-select-area, .zip-contents {
+.file-select-area, .zip-contents, .password-prompt {
     animation: fadeIn 0.5s ease-out;
 }
 
 @media (max-width: 600px) {
     .container {
-        padding: 20px 10px;
+        padding: 1rem;
     }
 
     h1 {
         font-size: 2rem;
     }
 
-    .file-select-area, .zip-contents {
-        padding: 30px 20px;
+    main section {
+        padding: 1.5rem;
     }
 }

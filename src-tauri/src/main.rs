@@ -5,6 +5,12 @@ use zip::read::ZipArchive;
 use std::fs::File;
 use std::io::BufReader;
 
+#[derive(serde::Serialize)]
+struct ZipContents {
+    files: Vec<String>,
+    is_encrypted: bool,
+}
+
 /// Function to handle ZIP file selection
 /// This function is called from the frontend to open a file dialog
 /// and allow the user to select a ZIP file.
@@ -36,22 +42,41 @@ async fn select_zip_file(window: tauri::Window) -> Result<(), String> {
 
 // Function to parse the ZIP file and return its contents
 #[tauri::command]
-fn parse_zip_file(file_path: String) -> Result<Vec<String>, String> {
-    // Open the ZIP file
+fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipContents, String> {
     let file = File::open(&file_path).map_err(|e| format!("Failed to open ZIP file: {}", e))?;
     let reader = BufReader::new(file);
 
-    // Create a ZipArchive from the file
     let mut zip = ZipArchive::new(reader).map_err(|e| format!("Error reading ZIP archive: {}", e))?;
 
-    // Extract file paths from the ZIP archive
     let mut file_paths = Vec::new();
+    let mut is_encrypted = false;
+
     for i in 0..zip.len() {
-        let file = zip.by_index(i).map_err(|e| format!("Error reading file in ZIP archive: {}", e))?;
-        file_paths.push(file.name().to_string());
+        let result = if let Some(pwd) = &password {
+            zip.by_index_decrypt(i, pwd.as_bytes())
+        } else {
+            zip.by_index(i)
+        };
+
+        match result {
+            Ok(file) => file_paths.push(file.name().to_string()),
+            Err(zip::result::ZipError::UnsupportedArchive(_)) => {
+                is_encrypted = true;
+                
+                continue;
+            }
+            Err(e) => {
+                // Log the error but continue processing
+                println!("Error reading file at index {}: {}", i, e);
+                continue;
+            }
+        }
     }
 
-    Ok(file_paths)
+    Ok(ZipContents {
+        files: file_paths,
+        is_encrypted,
+    })
 }
 
 fn main() {

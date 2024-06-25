@@ -1,15 +1,16 @@
-// Wait for the DOM to be fully loaded before executing the script
 document.addEventListener('DOMContentLoaded', () => {
-    // Get references to DOM elements
     const selectFileBtn = document.getElementById('selectFileBtn');
     const selectedFileName = document.getElementById('selectedFileName');
     const zipContents = document.getElementById('zipContents');
     const fileTree = document.getElementById('fileTree');
+    const passwordPrompt = document.getElementById('passwordPrompt');
+    const zipPassword = document.getElementById('zipPassword');
+    const submitPassword = document.getElementById('submitPassword');
 
-    // Add click event listener to the select file button
+    let currentFilePath = null;
+
     selectFileBtn.addEventListener('click', async () => {
         try {
-            // Call the Rust function to open file dialog
             await window.__TAURI__.invoke('select_zip_file');
         } catch (error) {
             console.error('Error selecting file:', error);
@@ -17,38 +18,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Listen for the custom event emitted by Rust when a file is selected
     window.__TAURI__.event.listen('file-selected', async (event) => {
-        // Display the selected file path
-        selectedFileName.textContent = `Selected file: ${event.payload}`;
+        currentFilePath = event.payload;
+        selectedFileName.textContent = `Selected file: ${currentFilePath}`;
+        await parseZipFile(currentFilePath);
+    });
 
+    async function parseZipFile(filePath, password = null) {
         try {
-            // Parse the ZIP file and get its contents
-            const contents = await window.__TAURI__.invoke('parse_zip_file', { filePath: event.payload });
-            // Display the ZIP contents
-            displayZipContents(contents);
+            const contents = await window.__TAURI__.invoke('parse_zip_file', { filePath, password });
+            if (contents.is_encrypted && !password) {
+                showPasswordPrompt();
+            } else {
+                hidePasswordPrompt();
+                displayZipContents(contents.files);
+            }
         } catch (error) {
             console.error('Error parsing ZIP file:', error);
             selectedFileName.textContent = 'Error parsing ZIP file. Please try again.';
+            hidePasswordPrompt();
+        }
+    }
+
+    function showPasswordPrompt() {
+        passwordPrompt.style.display = 'block';
+        zipPassword.value = ''; 
+        zipPassword.focus();
+    }
+
+    function hidePasswordPrompt() {
+        passwordPrompt.style.display = 'none';
+    }
+
+    submitPassword.addEventListener('click', () => {
+        const password = zipPassword.value;
+        if (password && currentFilePath) {
+            parseZipFile(currentFilePath, password);
+        } else {
+            selectedFileName.textContent = 'Password input cancelled. Please try again.';
         }
     });
 
-    // Function to display ZIP contents as a tree
-    function displayZipContents(contents) {
-        // Clear previous contents
+    // Allow submitting password with Enter key
+    zipPassword.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            submitPassword.click();
+        }
+    });
+
+    function displayZipContents(files) {
         fileTree.innerHTML = '';
-        
-        // Create a tree structure from the file paths
-        const tree = createTreeStructure(contents);
-        
-        // Render the tree
+        const tree = createTreeStructure(files);
         renderTree(tree, fileTree);
-        
-        // Show the ZIP contents section
         zipContents.style.display = 'block';
     }
 
-    // Function to create a tree structure from file paths
     function createTreeStructure(paths) {
         const tree = {};
         paths.forEach(path => {
@@ -64,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return tree;
     }
 
-    // Function to render the tree structure
     function renderTree(tree, parentElement) {
         for (const [name, subtree] of Object.entries(tree)) {
             const li = document.createElement('li');
