@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordPrompt = document.getElementById('passwordPrompt');
     const zipPassword = document.getElementById('zipPassword');
     const submitPassword = document.getElementById('submitPassword');
+    const zipMetadata = document.getElementById('zipMetadata');
 
     let currentFilePath = null;
 
@@ -32,6 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 hidePasswordPrompt();
                 displayZipContents(contents.files);
+                displayZipMetadata(contents.metadata);
             }
         } catch (error) {
             console.error('Error parsing ZIP file:', error);
@@ -71,6 +73,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const tree = createTreeStructure(files);
         renderTree(tree, fileTree);
         zipContents.style.display = 'block';
+    }
+
+    function displayZipMetadata(metadata) {
+        zipMetadata.innerHTML = `
+            <h3>ZIP File Metadata</h3>
+            <p>Name: ${metadata.name}</p>
+            <p>Size: ${formatBytes(metadata.size)}</p>
+            <p>Compressed Size: ${formatBytes(metadata.compressed_size)}</p>
+            <p>Number of Files: ${metadata.number_of_files}</p>
+        `;
+        zipMetadata.style.display = 'block';
+    }
+
+    function formatBytes(bytes, decimals = 2) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const dm = decimals < 0 ? 0 : decimals;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
     }
 
     function createTreeStructure(paths) {

@@ -25,7 +25,7 @@ body {
 }
 
 .container {
-    max-width: 800px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 2rem;
 }
@@ -114,6 +114,22 @@ h2, h3 {
     border-radius: var(--border-radius);
 }
 
+.zip-metadata {
+    background-color: var(--surface-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.zip-metadata h3 {
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.zip-metadata p {
+    margin-bottom: 0.25rem;
+}
+
 .file-tree {
     list-style-type: none;
     padding-left: 1.5rem;
@@ -134,6 +150,10 @@ h2, h3 {
     content: '📁';
 }
 
+.file-tree ul {
+    padding-left: 1.5rem;
+}
+
 footer {
     text-align: center;
     margin-top: 2rem;
@@ -146,11 +166,11 @@ footer {
     to { opacity: 1; transform: translateY(0); }
 }
 
-.file-select-area, .zip-contents, .password-prompt {
+.file-select-area, .zip-contents, .password-prompt, .zip-metadata {
     animation: fadeIn 0.5s ease-out;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .container {
         padding: 1rem;
     }
@@ -161,5 +181,10 @@ footer {
 
     main section {
         padding: 1.5rem;
+    }
+
+    .btn-primary, .btn-secondary {
+        width: 100%;
+        margin-bottom: 1rem;
     }
 }

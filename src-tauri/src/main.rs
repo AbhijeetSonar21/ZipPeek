@@ -4,11 +4,21 @@ use tauri::api::dialog::FileDialogBuilder;
 use zip::read::ZipArchive;
 use std::fs::File;
 use std::io::BufReader;
+use std::path::Path;
 
 #[derive(serde::Serialize)]
 struct ZipContents {
     files: Vec<String>,
     is_encrypted: bool,
+    metadata: ZipMetadata,
+}
+
+#[derive(serde::Serialize)]
+struct ZipMetadata {
+    name: String,
+    size: u64,
+    compressed_size: u64,
+    number_of_files: usize,
 }
 
 /// Function to handle ZIP file selection
@@ -50,6 +60,8 @@ fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipCont
 
     let mut file_paths = Vec::new();
     let mut is_encrypted = false;
+    let mut total_compressed_size = 0;
+    let mut total_uncompressed_size = 0;
 
     for i in 0..zip.len() {
         let result = if let Some(pwd) = &password {
@@ -59,10 +71,13 @@ fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipCont
         };
 
         match result {
-            Ok(file) => file_paths.push(file.name().to_string()),
+            Ok(file) => {
+                file_paths.push(file.name().to_string());
+                total_compressed_size += file.compressed_size();
+                total_uncompressed_size += file.size();
+            },
             Err(zip::result::ZipError::UnsupportedArchive(_)) => {
                 is_encrypted = true;
-                
                 continue;
             }
             Err(e) => {
@@ -73,9 +88,18 @@ fn parse_zip_file(file_path: String, password: Option<String>) -> Result<ZipCont
         }
     }
 
+    let path = Path::new(&file_path);
+    let metadata = ZipMetadata {
+        name: path.file_name().unwrap().to_str().unwrap().to_string(),
+        size: total_uncompressed_size,
+        compressed_size: total_compressed_size,
+        number_of_files: file_paths.len(),
+    };
+
     Ok(ZipContents {
         files: file_paths,
         is_encrypted,
+        metadata,
     })
 }
 
